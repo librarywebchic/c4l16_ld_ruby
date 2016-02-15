@@ -26,40 +26,33 @@ end
 
 if result.class == Net::HTTPOK
   # Load the data into an in-memory RDF repository, get the GenericResource and its Bib
-  Spira.repository = RDF::Repository.new.from_rdfxml(response)
+  graph = RDF::Repository.new.from_rdfxml(response)
   
-  #name
-  puts Spira.repository.query(:subject => RDF::URI.new(url), :predicate => RDF::URI.new('http://schema.org/name')).first.object.to_s
-  #author
-  authors = Spira.repository.query(:subject => RDF::URI.new(url), :predicate => RDF::URI.new('http://schema.org/author'))
-  authors.each { |author|
-      author_name = Spira.repository.query(:subject => author.object, :predicate => RDF::URI.new('http://schema.org/name')).first
-      puts author_name.object
-      }
+  graph.query([RDF::URI(url), RDF::URI("http://schema.org/name"), nil]) do |statement|
+    puts statement.object.to_s
+  end
   
-  creators = Spira.repository.query(:subject => RDF::URI.new(url), :predicate => RDF::URI.new('http://schema.org/creator'))
-  creators.each { |creator|
-      creator_name = Spira.repository.query(:subject => creator.object, :predicate => RDF::URI.new('http://schema.org/name')).first
-      puts creator_name.object
-      }
-        
-  #about
-  subjects = Spira.repository.query(:subject => RDF::URI.new(url), :predicate => RDF::URI.new('http://schema.org/about'))
-  subjects.each { |subject|
-      subject_name = Spira.repository.query(:subject => subject.object, :predicate => RDF::URI.new('http://schema.org/name')).first
-        if subject_name
-          puts subject_name.object
-        else
-          puts subject.object
-        end
-      
-    }
+  graph.query([RDF::URI(url), RDF::URI("http://schema.org/creator")]) do |statement|
+    graph.query([statement.object, RDF::URI("http://schema.org/name"), nil] ) do |creator|
+      puts creator.object.to_s
+    end
+  end
   
-  #description
-  descriptions = Spira.repository.query(:subject => RDF::URI.new(url), :predicate => RDF::URI.new('http://schema.org/description'))
-  descriptions.each { |description|
-    puts description.object
-  }
+  graph.query([RDF::URI(url), RDF::URI("http://schema.org/about")]) do |statement|
+    about = graph.query([statement.object, RDF::URI("http://schema.org/name"), nil] ) do |about|
+      about
+    end
+    
+    if about.count > 0
+      puts about.first.object
+    else
+      puts statement.object
+    end
+  end
+  
+  graph.query([RDF::URI(url), RDF::URI("http://schema.org/description")]) do |statement|
+    puts statement.object.to_s
+  end  
   
 else
   puts response.code
