@@ -61,6 +61,9 @@ if result.class == Net::HTTPOK
     puts description.object
   }
   
+  #date
+  puts Spira.repository.query(:subject => RDF::URI.new(url), :predicate => RDF::URI.new('http://schema.org/datePublished')).first.object.to_s
+  
 else
   puts response.code
   puts response
